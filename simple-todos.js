@@ -6,8 +6,27 @@ if (Meteor.isClient) {
 
     Template.body.helpers({
         tasks: function(){
-            return Tasks.find({}, {sort: {createdAt: -1}});
+            if (Session.get("hideCompleted")) {
+                //filter out completed tasks
+                return Tasks.find({checked: {$ne: true}}, {sort: {createdAt: -1}});
+            }else{
+                //return all the tasks
+                return Tasks.find({}, {sort: {createdAt: -1}});
+            }
+        },
+
+        hideCompleted: function(){
+            return Session.get("hideCompleted");
+        },
+
+        incompleteCount: function(){
+            return Tasks.find({checked: {$ne: true}}).count();
+        },
+
+        completeCount: function(){
+            return Tasks.find({checked: {$ne: false}}).count()
         }
+
     });
 
     Template.body.events({
@@ -24,7 +43,12 @@ if (Meteor.isClient) {
 
             //prevent default form submit
             return false;
+        },
+
+        "change .hide-completed input": function(event){
+           Session.set("hideCompleted", event.target.checked);
         }
+
     });
 
     Template.task.events({
