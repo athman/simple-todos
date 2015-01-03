@@ -14,8 +14,6 @@ if (Meteor.isClient) {
         "submit .new-task": function(event){
             //This function is called when the new task form is submitted
 
-            console.log(event);
-
             Tasks.insert({
                 text: event.target.text.value,
                 createdAt: new Date()
@@ -27,6 +25,16 @@ if (Meteor.isClient) {
             //prevent default form submit
             return false;
         }
-    })
+    });
+
+    Template.task.events({
+        "click .toggle-checked": function(){
+            //console.log(this);
+            Tasks.update(this._id, {$set: {checked: !this.checked}});
+        },
+        "click .delete": function(){
+            Tasks.remove(this._id);
+        }
+    });
 
 }
