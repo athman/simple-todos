@@ -6,16 +6,18 @@ if (Meteor.isClient) {
 
     Template.body.helpers({
         tasks: function(){
-            return Tasks.find({});
+            return Tasks.find({}, {sort: {createdAt: -1}});
         }
     });
 
     Template.body.events({
         "submit .new-task": function(event){
             //This function is called when the new task form is submitted
-            var text = event.target.text.value;
+
+            console.log(event);
+
             Tasks.insert({
-                text: text,
+                text: event.target.text.value,
                 createdAt: new Date()
             });
 
