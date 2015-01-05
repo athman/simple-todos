@@ -4,6 +4,8 @@ Tasks = new Mongo.Collection("tasks");
 
 if (Meteor.isClient) {
 
+    Meteor.subscribe("tasks");
+
     Template.body.helpers({
         tasks: function(){
             if (Session.get("hideCompleted")) {
@@ -27,6 +29,12 @@ if (Meteor.isClient) {
             return Tasks.find({checked: {$ne: false}}).count()
         }
 
+    });
+
+    Template.task.helpers({
+        isOwner: function(){
+            return this.owner === Meteor.userId();
+        }
     });
 
     Template.body.events({
@@ -60,6 +68,10 @@ if (Meteor.isClient) {
 
         "click .delete": function(){
             Meteor.call("deleteTask", this._id);
+        },
+
+        "click .toggle-private": function(){
+            Meteor.call("setPrivate", this._id, !this.private);
         }
 
     });
@@ -89,6 +101,12 @@ Meteor.methods({
             throw new Meteor.Error("Please Sign In");
         }
 
+        var task = Tasks.findOne(taskId);
+        if (task.private && task.owner !== Meteor.userId()) {
+            //Only the owner can delete the task
+            throw new Meteor.Error("You're not the owner of this task");
+        }
+
         Tasks.remove(taskId);
     },
 
@@ -97,11 +115,37 @@ Meteor.methods({
             throw new Meteor.Error("Please Sign In");
         }
 
+        var task = Tasks.findOne(taskId);
+        if (task.private && task.owner !== Meteor.userId()) {
+            throw new Meteor.Error("You're not the owner of this task");
+        }
+
         Tasks.update(taskId, {$set: { checked: setChecked} });
+    },
+
+    setPrivate: function(taskId, setToPrivate){
+        var task = Tasks.findOne(taskId);
+
+        //make sure only the task owner can make a task private
+        if (task.owner !== Meteor.userId()) {
+            throw new Meteor.Error("You're not the owner of this task");
+        }
+
+        Tasks.update(taskId, {$set: {private: setToPrivate}});
     }
+
 });
 
-
+if (Meteor.isServer) {
+    Meteor.publish("tasks", function(){
+        return Tasks.find({
+            $or: [
+                {private: {$ne: true}},
+                {owner: this.userId}
+            ]
+        });
+    });
+}
 
 
 
